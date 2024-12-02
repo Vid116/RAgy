@@ -11,7 +11,7 @@ google-ai-generativelanguage==0.6.4
 google-generativeai==0.5.4
 langchain==0.2.3
 langchain-anthropic==0.1.15
-langchain-community==0.2.4
+langchain-community>=0.3.0,<0.4.0
 langchain-core==0.2.5
 langchain-experimental==0.3.3
 langchain-openai==0.1.8
