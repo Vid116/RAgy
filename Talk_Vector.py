@@ -108,6 +108,7 @@ class RAGConversationAgent:
             - Highlight package discounts and combined benefits
             - Explain why suggested products work well together
             - Acknowledge if specific information is missing
+            - Ko omenjaš delni kasko vedno povej še točno o kateri kombinacije govoriš!
             
             Response Format:
             1. Direct answer about requested insurance (1 sentence)

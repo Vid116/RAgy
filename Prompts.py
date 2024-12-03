@@ -7,11 +7,9 @@ def Search_Prompt () -> str:
 Role and Context:
 You are facilitating searches in a database containing information about:
 - Car insurance (zavarovanje vozil)
-- Vehicle registration (registracija vozil)
-- Technical inspections (tehnični pregledi)
-- Car maintenance (vzdrževanje vozil)
-- Traffic regulations (prometni predpisi)
-- Related automotive topics
+   -Asistenca
+   -Pravna pomoč
+   -Kasko
 
 Your Objective:
 Transform user questions into comprehensive Slovenian search queries that will find the most relevant information in the database. The final query should capture both the explicit and implicit information needs.
