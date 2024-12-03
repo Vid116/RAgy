@@ -21,7 +21,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_websockets=True
+    #allow_websockets=True
 )
 
 # Additional middleware for WebSocket headers
