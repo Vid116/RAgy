@@ -9,11 +9,10 @@ fastapi==0.111.0
 firebase-admin==6.5.0
 google-ai-generativelanguage==0.6.4
 google-generativeai==0.5.4
-langchain-anthropic==0.1.15
-langchain-community>=0.3.0,<0.4.0
-langchain-core==0.2.5
-#langchain-experimental==0.3.3
-langchain-openai==0.1.8
+langchain-anthropic>=0.2.0
+langchain-openai>=0.2.0 
+langchain-community>=0.3.0
+langchain-core>=0.3.0
 numpy==1.26.4
 openai==1.33.0
 pandas==2.2.3
