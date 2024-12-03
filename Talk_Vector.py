@@ -93,8 +93,7 @@ class RAGConversationAgent:
     def _initialize_llm(self, model_name: str, temperature: float) -> None:
         self.llm = ChatOpenAI(
             model=model_name,
-            temperature=temperature,
-            request_timeout=30
+            temperature=temperature
         )
 
     def _initialize_chain(self):
