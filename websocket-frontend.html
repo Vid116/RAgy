@@ -53,10 +53,24 @@
             font-weight: bold;
             margin-bottom: 4px;
         }
+        #connectionStatus {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
     <h1>WebSocket Chat</h1>
+    <div id="connectionStatus"></div>
     <div id="messageArea"></div>
     <div>
         <input type="text" id="messageInput" placeholder="Type your message..." />
@@ -65,36 +79,66 @@
 
     <script>
         let ws;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
         const messageArea = document.getElementById('messageArea');
         const messageInput = document.getElementById('messageInput');
+        const connectionStatus = document.getElementById('connectionStatus');
         
+        function updateConnectionStatus(connected, message) {
+            connectionStatus.className = connected ? 'connected' : 'disconnected';
+            connectionStatus.textContent = message;
+        }
+
         function connect() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                updateConnectionStatus(false, 'Failed to connect after multiple attempts. Please refresh the page.');
+                return;
+            }
+
             const sessionId = Math.random().toString(36).substring(7);
-            ws = new WebSocket(`ws://localhost:8000/chat/${sessionId}`);
+            const wsUrl = `wss://ragy.onrender.com/chat/${sessionId}`;
+            
+            console.log(`Attempting to connect (attempt ${reconnectAttempts + 1}):`, wsUrl);
+            updateConnectionStatus(false, 'Connecting...');
+            
+            ws = new WebSocket(wsUrl);
             
             ws.onopen = () => {
-                addMessage('Connected to server', 'system');
+                console.log('WebSocket connection established');
+                updateConnectionStatus(true, 'Connected to server');
+                reconnectAttempts = 0;
             };
             
             ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'user') {
-                    addMessage(data.message, 'user-message', 'You');
-                } else if (data.type === 'agent') {
-                    addMessage(data.message, 'agent-message', 'Agent');
-                } else {
-                    addMessage(data.message, 'system');
+                console.log('Message received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'user') {
+                        addMessage(data.message, 'user-message', 'You');
+                    } else if (data.type === 'agent') {
+                        addMessage(data.message, 'agent-message', 'Agent');
+                    } else {
+                        addMessage(data.message, 'system');
+                    }
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                    addMessage('Error processing message', 'error');
                 }
             };
             
-            ws.onclose = () => {
-                addMessage('Disconnected from server', 'system');
-                setTimeout(connect, 5000);
+            ws.onclose = (event) => {
+                console.log('WebSocket closed:', event.code, event.reason);
+                updateConnectionStatus(false, 'Disconnected from server');
+                reconnectAttempts++;
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    setTimeout(connect, 5000);
+                }
             };
             
             ws.onerror = (error) => {
-                addMessage('Error connecting to server', 'error');
                 console.error('WebSocket error:', error);
+                updateConnectionStatus(false, 'Error connecting to server');
             };
         }
         
@@ -135,6 +179,7 @@
             }
         });
         
+        // Initial connection
         connect();
     </script>
 </body>

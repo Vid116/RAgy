@@ -1,5 +1,6 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from typing import Dict
 import json
 import logging
@@ -13,13 +14,26 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
+# Enhanced CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_websockets=True
 )
+
+# Additional middleware for WebSocket headers
+@app.middleware("http")
+async def add_websocket_headers(request, call_next):
+    response = await call_next(request)
+    if not isinstance(response, Response):
+        return response
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    return response
 
 active_connections: Dict[str, WebSocket] = {}
 
@@ -78,6 +92,10 @@ async def websocket_endpoint(websocket: WebSocket, session_id: str):
     except Exception as e:
         logger.error(f"Error in WebSocket handler: {e}")
         active_connections.pop(session_id, None)
+
+@app.get("/")
+async def root():
+    return {"message": "WebSocket server is running"}
 
 if __name__ == "__main__":
     import uvicorn
