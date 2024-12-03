@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        #messageArea {
+            height: 400px;
+            border: 1px solid #ccc;
+            margin-bottom: 20px;
+            padding: 10px;
+            overflow-y: auto;
+            background: #f9f9f9;
+        }
+        #messageInput {
+            width: calc(100% - 100px);
+            padding: 8px;
+            margin-right: 10px;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .system {
+            color: #666;
+            font-style: italic;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-radius: 4px;
+        }
+        .user-message {
+            background-color: #e3f2fd;
+            margin-left: 20px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .agent-message {
+            background-color: #f5f5f5;
+            margin-right: 20px;
+            padding: 8px;
+            border-radius: 8px;
+        }
+        .sender-label {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        #connectionStatus {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>WebSocket Chat</h1>
+    <div id="connectionStatus"></div>
+    <div id="messageArea"></div>
+    <div>
+        <input type="text" id="messageInput" placeholder="Type your message..." />
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        let ws;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const messageArea = document.getElementById('messageArea');
+        const messageInput = document.getElementById('messageInput');
+        const connectionStatus = document.getElementById('connectionStatus');
+        
+        function updateConnectionStatus(connected, message) {
+            connectionStatus.className = connected ? 'connected' : 'disconnected';
+            connectionStatus.textContent = message;
+        }
+
+        function connect() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                updateConnectionStatus(false, 'Failed to connect after multiple attempts. Please refresh the page.');
+                return;
+            }
+
+            const sessionId = Math.random().toString(36).substring(7);
+            const wsUrl = `wss://ragy.onrender.com/chat/${sessionId}`;
+            
+            console.log(`Attempting to connect (attempt ${reconnectAttempts + 1}):`, wsUrl);
+            updateConnectionStatus(false, 'Connecting...');
+            
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = () => {
+                console.log('WebSocket connection established');
+                updateConnectionStatus(true, 'Connected to server');
+                reconnectAttempts = 0;
+            };
+            
+            ws.onmessage = (event) => {
+                console.log('Message received:', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'user') {
+                        addMessage(data.message, 'user-message', 'You');
+                    } else if (data.type === 'agent') {
+                        addMessage(data.message, 'agent-message', 'Agent');
+                    } else {
+                        addMessage(data.message, 'system');
+                    }
+                } catch (e) {
+                    console.error('Error parsing message:', e);
+                    addMessage('Error processing message', 'error');
+                }
+            };
+            
+            ws.onclose = (event) => {
+                console.log('WebSocket closed:', event.code, event.reason);
+                updateConnectionStatus(false, 'Disconnected from server');
+                reconnectAttempts++;
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    setTimeout(connect, 5000);
+                }
+            };
+            
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus(false, 'Error connecting to server');
+            };
+        }
+        
+        function addMessage(message, type = 'message', sender = null) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            
+            if (sender) {
+                const senderLabel = document.createElement('div');
+                senderLabel.className = 'sender-label';
+                senderLabel.textContent = sender;
+                messageDiv.appendChild(senderLabel);
+            }
+            
+            const messageContent = document.createElement('div');
+            messageContent.textContent = message;
+            messageDiv.appendChild(messageContent);
+            
+            messageArea.appendChild(messageDiv);
+            messageArea.scrollTop = messageArea.scrollHeight;
+        }
+        
+        function sendMessage() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                const message = messageInput.value.trim();
+                if (message) {
+                    ws.send(message);
+                    messageInput.value = '';
+                }
+            } else {
+                addMessage('Not connected to server', 'error');
+            }
+        }
+        
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+        
+        // Initial connection
+        connect();
+    </script>
+</body>
+</html>
